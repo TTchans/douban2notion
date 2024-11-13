@@ -96,9 +96,9 @@ def insert_movie():
         subject = result.get("subject")
         if subject.get("url") is null:
             subject["title"] = "未知电影"
-        else
+        else:
             if(subject.get("title")=="未知电影" or subject.get("title")=="未知电视剧") and subject.get("url") in unknown_dict:
-                unknown = unknown_dict.get(subject.get("url"))
+                unknown = unknown_dict.get(subject.get("url"))  
                 subject["title"] = unknown.get("title")
                 subject["pic"]["large"] = unknown.get("img")
         movie["电影名"] = subject.get("title")         
