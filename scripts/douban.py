@@ -98,11 +98,11 @@ def insert_movie():
             subject["title"] = "未知电影"
         else:
             if(subject.get("title")=="未知电影" or subject.get("title")=="未知电视剧") and subject.get("url") in unknown_dict:
-                unknown = unknown_dict.get(subject.get("url"))  
+                unknown = unknown_dict.get(subject.get("url"))
                 subject["title"] = unknown.get("title")
                 subject["pic"]["large"] = unknown.get("img")
-        movie["电影名"] = subject.get("title")         
-        create_time = result.get("create_time")      
+        movie["电影名"] = subject.get("title")
+        create_time = result.get("create_time")
         create_time = pendulum.parse(create_time,tz=utils.tz)
         #时间上传到Notion会丢掉秒的信息，这里直接将秒设置为0
         create_time = create_time.replace(second=0)
