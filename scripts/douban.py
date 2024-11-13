@@ -94,7 +94,7 @@ def insert_movie():
     for result in results:
         movie = {}
         subject = result.get("subject")
-        if subject is None:                
+        if subject is None:
             print("空对象")
         else:
             if(subject.get("title")=="未知电影" or subject.get("title")=="未知电视剧") and subject.get("url") in unknown_dict:
