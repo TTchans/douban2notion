@@ -94,76 +94,79 @@ def insert_movie():
     for result in results:
         movie = {}
         subject = result.get("subject")
-        print(subject)
-        if(subject.get("title")=="未知电影" or subject.get("title")=="未知电视剧") and subject.get("url") in unknown_dict:
-            unknown = unknown_dict.get(subject.get("url"))
-            subject["title"] = unknown.get("title")
-            subject["pic"]["large"] = unknown.get("img")
-        movie["电影名"] = subject.get("title")
-        create_time = result.get("create_time")
-        create_time = pendulum.parse(create_time,tz=utils.tz)
-        #时间上传到Notion会丢掉秒的信息，这里直接将秒设置为0
-        create_time = create_time.replace(second=0)
-        movie["日期"] = create_time.int_timestamp
-        movie["豆瓣链接"] = subject.get("url")
-        movie["状态"] = movie_status.get(result.get("status"))
-        if result.get("rating"):
-            movie["评分"] = rating.get(result.get("rating").get("value"))
-        if result.get("comment"):
-            movie["短评"] = result.get("comment")
-        if notion_movie_dict.get(movie.get("豆瓣链接")):
-            notion_movive = notion_movie_dict.get(movie.get("豆瓣链接"))
-            if (
-                notion_movive.get("日期") != movie.get("日期")
-                or notion_movive.get("短评") != movie.get("短评")
-                or notion_movive.get("状态") != movie.get("状态")
-                or notion_movive.get("评分") != movie.get("评分")
-            ):
+        print(subject)    
+        if subject is not None:
+            if(subject.get("title")=="未知电影" or subject.get("title")=="未知电视剧") and subject.get("url") in unknown_dict:
+                unknown = unknown_dict.get(subject.get("url"))
+                subject["title"] = unknown.get("title")
+                subject["pic"]["large"] = unknown.get("img")
+            movie["电影名"] = subject.get("title")
+            create_time = result.get("create_time")
+            create_time = pendulum.parse(create_time,tz=utils.tz)
+            #时间上传到Notion会丢掉秒的信息，这里直接将秒设置为0
+            create_time = create_time.replace(second=0)
+            movie["日期"] = create_time.int_timestamp
+            movie["豆瓣链接"] = subject.get("url")
+            movie["状态"] = movie_status.get(result.get("status"))
+            if result.get("rating"):
+                movie["评分"] = rating.get(result.get("rating").get("value"))
+            if result.get("comment"):
+                movie["短评"] = result.get("comment")
+            if notion_movie_dict.get(movie.get("豆瓣链接")):
+                notion_movive = notion_movie_dict.get(movie.get("豆瓣链接"))
+                if (
+                    notion_movive.get("日期") != movie.get("日期")
+                    or notion_movive.get("短评") != movie.get("短评")
+                    or notion_movive.get("状态") != movie.get("状态")
+                    or notion_movive.get("评分") != movie.get("评分")
+                ):
+                    properties = utils.get_properties(movie, movie_properties_type_dict)
+                    notion_helper.get_date_relation(properties,create_time)
+                    notion_helper.update_page(
+                        page_id=notion_movive.get("page_id"),
+                        properties=properties
+                )
+    
+            else:
+                print(f"插入{movie.get('电影名')}")
+                cover = subject.get("pic").get("large")
+                movie["封面"] = cover
+                movie["类型"] = subject.get("type")
+                if subject.get("genres"):
+                    movie["分类"] = [
+                        notion_helper.get_relation_id(
+                            x, notion_helper.category_database_id, TAG_ICON_URL
+                        )
+                        for x in subject.get("genres")
+                    ]
+                if subject.get("actors"):
+                    l = []
+                    actors = subject.get("actors")[0:100]
+                    for actor in actors:
+                        if actor.get("name"):
+                            if "/" in actor.get("name"):
+                                l.extend(actor.get("name").split("/"))
+                            else:
+                                l.append(actor.get("name"))  
+                    movie["演员"] = l
+                if subject.get("directors"):
+                    movie["导演"] = [
+                        notion_helper.get_relation_id(
+                            x.get("name"), notion_helper.director_database_id, USER_ICON_URL
+                        )
+                        for x in subject.get("directors")[0:100]
+                    ]
                 properties = utils.get_properties(movie, movie_properties_type_dict)
                 notion_helper.get_date_relation(properties,create_time)
-                notion_helper.update_page(
-                    page_id=notion_movive.get("page_id"),
-                    properties=properties
-            )
-
+                parent = {
+                    "database_id": notion_helper.movie_database_id,
+                    "type": "database_id",
+                }
+                notion_helper.create_page(
+                    parent=parent, properties=properties, icon=get_icon(cover)
+                )
         else:
-            print(f"插入{movie.get('电影名')}")
-            cover = subject.get("pic").get("large")
-            movie["封面"] = cover
-            movie["类型"] = subject.get("type")
-            if subject.get("genres"):
-                movie["分类"] = [
-                    notion_helper.get_relation_id(
-                        x, notion_helper.category_database_id, TAG_ICON_URL
-                    )
-                    for x in subject.get("genres")
-                ]
-            if subject.get("actors"):
-                l = []
-                actors = subject.get("actors")[0:100]
-                for actor in actors:
-                    if actor.get("name"):
-                        if "/" in actor.get("name"):
-                            l.extend(actor.get("name").split("/"))
-                        else:
-                            l.append(actor.get("name"))  
-                movie["演员"] = l
-            if subject.get("directors"):
-                movie["导演"] = [
-                    notion_helper.get_relation_id(
-                        x.get("name"), notion_helper.director_database_id, USER_ICON_URL
-                    )
-                    for x in subject.get("directors")[0:100]
-                ]
-            properties = utils.get_properties(movie, movie_properties_type_dict)
-            notion_helper.get_date_relation(properties,create_time)
-            parent = {
-                "database_id": notion_helper.movie_database_id,
-                "type": "database_id",
-            }
-            notion_helper.create_page(
-                parent=parent, properties=properties, icon=get_icon(cover)
-            )
+            print("不插入")
 
 
 def insert_book():
